@@ -29,13 +29,18 @@ import { defineSavedMetrics } from '../utils';
  * Controls for transforming charts into matrix/grid layouts
  */
 
-// Utility function to check if matrixify controls should be visible
+// Utility function to check if matrixify controls should be visible.
+// Controls both visibility callbacks and validator injection via mapStateToProps.
+// The matrixify_enable guard prevents hidden validators from firing on
+// pre-revamp charts with stale matrixify_mode defaults (fix for #38519).
 const isMatrixifyVisible = (
   controls: any,
   axis: 'rows' | 'columns',
   mode?: 'metrics' | 'dimensions',
   selectionMode?: 'members' | 'topn' | 'all',
 ) => {
+  if (controls?.matrixify_enable?.value !== true) return false;
+
   const modeControl = `matrixify_mode_${axis}`;
   const selectionModeControl = `matrixify_dimension_selection_mode_${axis}`;
 
@@ -372,4 +377,4 @@ matrixifyControls.matrixify_show_column_headers = {
   visibility: ({ controls }) => isMatrixifyVisible(controls, 'columns'),
 };
 
-export { matrixifyControls };
+export { matrixifyControls, isMatrixifyVisible };
