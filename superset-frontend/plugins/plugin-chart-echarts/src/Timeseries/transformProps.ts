@@ -711,7 +711,10 @@ export default function transformProps(
   const deduplicatedFormatter = showMaxLabel
     ? (() => {
         let lastLabel: string | undefined;
-        const wrapper = (value: number | string) => {
+        const wrapper = (value: number | string, index: number) => {
+          if (index === 0) {
+            lastLabel = undefined;
+          }
           const label =
             typeof xAxisFormatter === 'function'
               ? (xAxisFormatter as Function)(value)

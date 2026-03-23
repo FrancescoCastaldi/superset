@@ -1348,13 +1348,19 @@ test('x-axis formatter deduplicates consecutive identical labels for coarse time
   expect(typeof formatter).toBe('function');
   expect(xAxisResult.axisLabel.showMaxLabel).toBe(true);
 
-  const label1 = formatter(Date.UTC(2003, 0, 1));
-  const label2 = formatter(Date.UTC(2004, 0, 1));
-  const label3 = formatter(Date.UTC(2005, 0, 1));
-  const label4 = formatter(Date.UTC(2005, 6, 1));
+  const label1 = formatter(Date.UTC(2003, 0, 1), 0);
+  const label2 = formatter(Date.UTC(2004, 0, 1), 1);
+  const label3 = formatter(Date.UTC(2005, 0, 1), 2);
+  const label4 = formatter(Date.UTC(2005, 6, 1), 3);
 
   expect(label1).toBe('2003');
   expect(label2).toBe('2004');
   expect(label3).toBe('2005');
   expect(label4).toBe('');
+
+  // Simulates ECharts re-render: index resets to 0, so lastLabel
+  // must be cleared even if the first tick matches the previous
+  // pass's last tick.
+  const reRenderLabel1 = formatter(Date.UTC(2005, 0, 1), 0);
+  expect(reRenderLabel1).toBe('2005');
 });
