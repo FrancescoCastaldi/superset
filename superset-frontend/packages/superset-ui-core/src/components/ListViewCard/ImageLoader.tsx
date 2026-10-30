@@ -20,6 +20,7 @@ import { useEffect, useState, DetailedHTMLProps, HTMLAttributes } from 'react';
 
 import { logging } from '@apache-superset/core/utils';
 import { styled } from '@apache-superset/core/theme';
+import SupersetClient from '../../connection/SupersetClient';
 
 export type BackgroundPosition = 'top' | 'bottom';
 interface ImageContainerProps {
@@ -57,7 +58,18 @@ export function ImageLoader({
 
   useEffect(() => {
     if (src) {
-      fetch(src)
+      let requestUrl = src;
+      try {
+        if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) {
+          requestUrl = src;
+        } else {
+          requestUrl = SupersetClient.getUrl({ endpoint: src });
+        }
+      } catch (e) {
+        requestUrl = src;
+      }
+
+      fetch(requestUrl)
         .then(response => response.blob())
         .then(blob => {
           if (/image/.test(blob.type)) {

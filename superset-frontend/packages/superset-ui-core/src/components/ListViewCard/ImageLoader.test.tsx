@@ -20,6 +20,7 @@ import fetchMock from 'fetch-mock';
 
 import { render, screen } from '@superset-ui/core/spec';
 import { ImageLoader, type BackgroundPosition } from './ImageLoader';
+import SupersetClient from '../../connection/SupersetClient';
 
 global.URL.createObjectURL = jest.fn(() => '/local_url');
 const blob = new Blob([], { type: 'image/png' });
@@ -84,5 +85,19 @@ describe('ImageLoader', () => {
       'src',
       '/fallback',
     );
+  });
+
+  test('prepends appRoot to relative thumbnail urls (#45638)', async () => {
+    SupersetClient.configure({ appRoot: '/analytics' });
+    fetchMock.once('glob:*/analytics/api/v1/chart/1/thumbnail', {
+      body: blob,
+      headers: { 'Content-Type': 'image/png' },
+    });
+
+    setup({ src: '/api/v1/chart/1/thumbnail' });
+    expect(
+      fetchMock.callHistory.calls(/\/analytics\/api\/v1\/chart\/1\/thumbnail/),
+    ).toHaveLength(1);
+    SupersetClient.reset();
   });
 });
