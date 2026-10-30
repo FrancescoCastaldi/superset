@@ -194,3 +194,29 @@ def test_flat_should_reset_multilevel_row_index():
     assert res["group"].tolist() == ["group_a", "group_a", "group_b"]
     assert res["subgroup"].tolist() == ["sub_1", "sub_2", "sub_1"]
     assert res["val"].tolist() == [10, 20, 30]
+
+
+def test_flat_should_flat_row_and_column_multiindex() -> None:
+    index = pd.MultiIndex.from_tuples(
+        [("US", "web"), ("DE", "mobile")], names=["country", "channel"]
+    )
+    columns = pd.MultiIndex.from_tuples([("sales", "sum")])
+    df = pd.DataFrame([10, 20], index=index, columns=columns)
+    metric = FLAT_COLUMN_SEPARATOR.join(["sales", "sum"])
+    expected = pd.DataFrame(
+        {"country": ["US", "DE"], "channel": ["web", "mobile"], metric: [10, 20]}
+    )
+
+    result = pp.flatten(df)
+
+    pd.testing.assert_frame_equal(result, expected)
+    assert result.to_dict(orient="records") == expected.to_dict(orient="records")
+
+
+def test_flat_should_preserve_row_multiindex_when_reset_disabled() -> None:
+    index = pd.MultiIndex.from_tuples(
+        [("US", "web"), ("DE", "mobile")], names=["country", "channel"]
+    )
+    df = pd.DataFrame({"sales": [10, 20]}, index=index)
+
+    pd.testing.assert_frame_equal(pp.flatten(df, reset_index=False), df)
