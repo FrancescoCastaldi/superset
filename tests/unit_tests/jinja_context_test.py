@@ -2306,6 +2306,35 @@ def test_metric_macro_embedded_user_skips_base_filter(mocker: MockerFixture) -> 
             ["dttm"],
             ["dttm"],
         ),
+        (
+            "Filter is extracted even when a custom SQL filter precedes it (#45269)",
+            ["dttm"],
+            {"target_type": "DATE", "remove_filter": True},
+            "trino://mydb",
+            [
+                {
+                    "filters": [
+                        {
+                            "clause": "WHERE",
+                            "expressionType": "SQL",
+                            "sqlExpression": "status = 'active'",
+                        },
+                        {
+                            "col": "dttm",
+                            "op": "TEMPORAL_RANGE",
+                            "val": "Last month",
+                        },
+                    ],
+                }
+            ],
+            TimeFilter(
+                from_expr="DATE '2024-08-03'",
+                to_expr="DATE '2024-09-03'",
+                time_range="Last month",
+            ),
+            ["dttm"],
+            ["dttm"],
+        ),
     ],
 )
 def test_get_time_filter(
