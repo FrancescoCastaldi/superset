@@ -248,8 +248,16 @@ def _append_columns(
         # caller which mutates the result does not reach `base_df`.
         return base_df.copy()
 
-    overwritten = {key: value for key, value in columns.items() if key == value}
-    appended = {key: value for key, value in columns.items() if key != value}
+    overwritten = {
+        key: value
+        for key, value in columns.items()
+        if key == value or value in base_df.columns
+    }
+    appended = {
+        key: value
+        for key, value in columns.items()
+        if key != value and value not in base_df.columns
+    }
 
     _base_df = base_df
     if overwritten:
@@ -262,11 +270,13 @@ def _append_columns(
         # that truly needs a wider dtype (e.g. NaN into int64) instead of
         # silently upcasting the way pandas <3 did -- so that case falls back to
         # plain column replacement, which allows the dtype to change.
-        for key in overwritten:
+        for key, target in overwritten.items():
             try:
-                _base_df.loc[:, [key]] = append_df[[key]]
+                _base_df.loc[:, [target]] = append_df[[key]].rename(
+                    columns={key: target}
+                )
             except TypeError:
-                _base_df[key] = append_df[key]
+                _base_df[target] = append_df[key].values
     if not appended:
         return _base_df
     # Select before renaming: `append_df` may carry columns the mapping does not

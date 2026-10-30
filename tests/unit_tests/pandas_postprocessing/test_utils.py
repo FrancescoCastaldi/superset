@@ -87,6 +87,21 @@ def test_append_columns_with_mixed_mapping():
     assert series_to_list(mixed["z2"]) == [30.0, 40.0]
 
 
+def test_append_columns_rename_onto_existing_column():
+    """
+    A rename mapping that targets an existing column must overwrite rather
+    than duplicate (#45082).
+    """
+    base_df = DataFrame({"y": [1.0, 2.0], "z": [3.0, 4.0]})
+    append_df = DataFrame({"y": [10.0, 20.0]})
+
+    result = _append_columns(base_df, append_df, {"y": "z"})
+    assert result.columns.tolist() == ["y", "z"]
+    assert not result.columns.duplicated().any()
+    assert series_to_list(result["y"]) == [1.0, 2.0]
+    assert series_to_list(result["z"]) == [10.0, 20.0]
+
+
 def test_append_columns_ignores_unmapped_columns():
     """
     Only the columns the mapping asks for may reach the result.
