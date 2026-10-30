@@ -2693,9 +2693,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return g and hasattr(g, "user") and isinstance(ex, cls.oauth2_exception)
 
     @classmethod
-    def get_max_column_name_length(
-        cls, database: Database | None = None
-    ) -> int | None:
+    def get_max_column_name_length(cls, database: Database | None = None) -> int | None:
         """
         Return the maximum column/identifier length supported by the database engine.
         Defaults to cls.max_column_name_length.
@@ -2720,10 +2718,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
         label_mutated = cls._mutate_label(label)
         max_col_length = cls.get_max_column_name_length(database)
-        if (
-            max_col_length
-            and len(label_mutated) > max_col_length
-        ):
+        if max_col_length and len(label_mutated) > max_col_length:
             label_mutated = cls._truncate_label(label, max_length=max_col_length)
         if cls.force_column_alias_quotes:
             label_mutated = quoted_name(label_mutated, True)
@@ -2788,9 +2783,11 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
         label = hash_from_str(label)
         # truncate hash if it exceeds max length
-        max_col_length = max_length if max_length is not None else cls.max_column_name_length
+        max_col_length = (
+            max_length if max_length is not None else cls.max_column_name_length
+        )
         if max_col_length and len(label) > max_col_length:
-            label = label[: max_col_length]
+            label = label[:max_col_length]
         return label
 
     @classmethod

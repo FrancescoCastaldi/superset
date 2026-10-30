@@ -23,7 +23,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, cast, NamedTuple, TYPE_CHECKING
 
-from flask import current_app
+from flask import current_app, g
 from flask_babel import gettext as _
 from jinja2.exceptions import TemplateError
 from pandas import DataFrame
@@ -735,8 +735,8 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
                 user = getattr(g, "user", None)
                 if user and getattr(user, "username", None):
                     cache_dict["impersonation_key"] = user.username
-        except AttributeError:
-            # datasource or database do not exist
+        except (AttributeError, RuntimeError):
+            # datasource or database do not exist or outside request context
             pass
 
         cache_key = hash_from_dict(

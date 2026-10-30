@@ -74,9 +74,7 @@ class OracleEngineSpec(BaseEngineSpec):
     supports_multivalues_insert = True
 
     @classmethod
-    def get_max_column_name_length(
-        cls, database: Database | None = None
-    ) -> int | None:
+    def get_max_column_name_length(cls, database: Database | None = None) -> int | None:
         """
         Return the maximum column/identifier length supported by Oracle.
 
@@ -88,7 +86,9 @@ class OracleEngineSpec(BaseEngineSpec):
             if version is not None:
                 parts = [int(p) for p in re.findall(r"\d+", str(version))]
                 if parts:
-                    if parts[0] < 12 or (parts[0] == 12 and len(parts) > 1 and parts[1] < 2):
+                    if parts[0] < 12 or (
+                        parts[0] == 12 and len(parts) > 1 and parts[1] < 2
+                    ):
                         return 30
             major_version = cls.get_server_major_version(database)
             if major_version is not None and major_version < 12:

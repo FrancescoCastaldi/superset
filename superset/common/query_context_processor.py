@@ -74,10 +74,10 @@ from superset.utils import csv, excel, json
 from superset.utils.cache import generate_cache_key, set_and_log_cache
 from superset.utils.core import (
     ANNOTATION_SOURCE_TYPES_WITH_CHART_REFERENCE,
-    FilterOperator,
     DatasourceType,
     DTTM_ALIAS,
     error_msg_from_exception,
+    FilterOperator,
     GenericDataType,
     get_column_name,
     get_column_names_from_columns,
@@ -1028,9 +1028,14 @@ class QueryContextProcessor:
             if overrides := annotation_layer.get("overrides"):
                 time_grain = None
                 if "time_grain_sqla" in overrides or "granularity" in overrides:
-                    time_grain = overrides.get("time_grain_sqla") or overrides.get("granularity")
+                    time_grain = overrides.get("time_grain_sqla") or overrides.get(
+                        "granularity"
+                    )
                     if time_grain is None and query_obj:
-                        time_grain = query_obj.extras.get("time_grain_sqla") or query_obj.granularity
+                        time_grain = (
+                            query_obj.extras.get("time_grain_sqla")
+                            or query_obj.granularity
+                        )
                 if time_grain:
                     for query_object in query_context.queries:
                         query_object.extras["time_grain_sqla"] = time_grain
@@ -1045,7 +1050,10 @@ class QueryContextProcessor:
                         time_range = query_obj.time_range
                         if not time_range:
                             for flt in query_obj.filters:
-                                if flt.get("op") in ("TEMPORAL_RANGE", FilterOperator.TEMPORAL_RANGE):
+                                if flt.get("op") in (
+                                    "TEMPORAL_RANGE",
+                                    FilterOperator.TEMPORAL_RANGE,
+                                ):
                                     time_range = flt.get("val")
                                     break
                 if time_range:
@@ -1058,7 +1066,10 @@ class QueryContextProcessor:
 
                         has_temporal_filter = False
                         for flt in query_object.filters:
-                            if flt.get("op") in ("TEMPORAL_RANGE", FilterOperator.TEMPORAL_RANGE):
+                            if flt.get("op") in (
+                                "TEMPORAL_RANGE",
+                                FilterOperator.TEMPORAL_RANGE,
+                            ):
                                 flt["val"] = time_range
                                 has_temporal_filter = True
                         if not has_temporal_filter:
@@ -1068,13 +1079,17 @@ class QueryContextProcessor:
                                 if isinstance(first_col, str):
                                     temp_col = first_col
                                 elif isinstance(first_col, dict):
-                                    temp_col = first_col.get("column_name") or first_col.get("label")
+                                    temp_col = first_col.get(
+                                        "column_name"
+                                    ) or first_col.get("label")
                             if temp_col and isinstance(temp_col, str):
-                                query_object.filters.append({
-                                    "col": temp_col,
-                                    "op": FilterOperator.TEMPORAL_RANGE.value,
-                                    "val": time_range,
-                                })
+                                query_object.filters.append(
+                                    {
+                                        "col": temp_col,
+                                        "op": FilterOperator.TEMPORAL_RANGE.value,
+                                        "val": time_range,
+                                    }
+                                )
 
             query_context.force = force
             command = ChartDataCommand(query_context)

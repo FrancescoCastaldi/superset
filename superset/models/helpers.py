@@ -2482,7 +2482,9 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
         db_engine_spec = self.db_engine_spec
         # add quotes to tables
         if db_engine_spec.get_allows_alias_in_select(self.database):
-            label = db_engine_spec.make_label_compatible(label_expected, database=self.database)
+            label = db_engine_spec.make_label_compatible(
+                label_expected, database=self.database
+            )
             sqla_col = sqla_col.label(label)
         sqla_col.key = label_expected
         return sqla_col
@@ -7641,7 +7643,9 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     # in this case the column name, not the alias, needs to be
                     # conditionally mutated, as it refers to the column alias in
                     # the inner query
-                    col_name = db_engine_spec.make_label_compatible(gby_name + "__", database=self.database)
+                    col_name = db_engine_spec.make_label_compatible(
+                        gby_name + "__", database=self.database
+                    )
                     subq_col = (
                         subq_alias.c[col_name]
                         if col_name in subq_alias.c
@@ -7695,9 +7699,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                         having_clause_and,
                     )
                 else:
-                    tbl = tbl.join(
-                        subq_alias, and_(*on_clause)
-                    )
+                    tbl = tbl.join(subq_alias, and_(*on_clause))
             else:
                 if series_limit_metric:
                     orderby = [
