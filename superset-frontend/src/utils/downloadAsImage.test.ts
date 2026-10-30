@@ -1519,9 +1519,15 @@ test('forwards both bound toast callbacks to forceLoadAllCharts', async () => {
 });
 
 test('filterCssVariables filters out custom CSS properties starting with -- (#45885)', () => {
+  const dummyElement = document.createElement('div');
+  // Called with (element, propName) by dom-to-image-more
+  expect(filterCssVariables(dummyElement, '--ant-color-primary')).toBe(false);
+  expect(filterCssVariables(dummyElement, '--custom-var')).toBe(false);
+  expect(filterCssVariables(dummyElement, 'color')).toBe(true);
+  expect(filterCssVariables(dummyElement, 'background-color')).toBe(true);
+  expect(filterCssVariables(dummyElement, 'font-size')).toBe(true);
+
+  // Called directly with (propName)
   expect(filterCssVariables('--ant-color-primary')).toBe(false);
-  expect(filterCssVariables('--custom-var')).toBe(false);
   expect(filterCssVariables('color')).toBe(true);
-  expect(filterCssVariables('background-color')).toBe(true);
-  expect(filterCssVariables('font-size')).toBe(true);
 });

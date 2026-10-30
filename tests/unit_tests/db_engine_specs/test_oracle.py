@@ -389,11 +389,17 @@ def test_register_engine_events_ignores_other_dialects() -> None:
 
 def test_oracle_week_time_grain():
     from superset.constants import TimeGrain
-    from superset.db_engine_specs.oracle import OracleEngineSpec
     from superset.db_engine_specs.impala import ImpalaEngineSpec
+    from superset.db_engine_specs.oracle import OracleEngineSpec
 
-    assert OracleEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "TRUNC(CAST({col} as DATE), 'IW')"
-    assert ImpalaEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "DATE_TRUNC('week', {col})"
+    assert (
+        OracleEngineSpec._time_grain_expressions[TimeGrain.WEEK]
+        == "TRUNC(CAST({col} as DATE), 'IW')"
+    )
+    assert (
+        ImpalaEngineSpec._time_grain_expressions[TimeGrain.WEEK]
+        == "DATE_TRUNC('week', {col})"
+    )
 
 
 @pytest.mark.parametrize(
@@ -427,5 +433,7 @@ def test_oracle_make_label_compatible_truncates_for_legacy_version() -> None:
     assert len(label) == 30
 
     database_19c = mock_oracle_database(version="19c")
-    label_19c = OracleEngineSpec.make_label_compatible(long_label, database=database_19c)
+    label_19c = OracleEngineSpec.make_label_compatible(
+        long_label, database=database_19c
+    )
     assert len(label_19c) == 50

@@ -665,9 +665,12 @@ def test_semantic_view_get_extra_cache_keys(
     provider.assert_not_called()
 
 
-def test_semantic_view_cache_query_by_user(app_context: None) -> None:
-    """When CACHE_QUERY_BY_USER is enabled, different users get different cache keys (#45877)."""
+def test_semantic_view_cache_query_by_user(
+    app_context: None, explicit_model_namespace: None
+) -> None:
+    """When CACHE_QUERY_BY_USER is enabled, different users get different cache keys (#45877)."""  # noqa: E501
     from flask import g
+
     from superset.common.query_object import QueryObject
 
     provider = MagicMock()
@@ -689,7 +692,22 @@ def test_semantic_view_cache_query_by_user(app_context: None) -> None:
     user_b.is_anonymous = False
     user_b.is_guest_user = False
 
+    guest_user_1 = MagicMock()
+    guest_user_1.id = 99
+    guest_user_1.username = "guest1"
+    guest_user_1.roles = []
+    guest_user_1.is_anonymous = False
+    guest_user_1.is_guest_user = True
+
+    guest_user_2 = MagicMock()
+    guest_user_2.id = 100
+    guest_user_2.username = "guest2"
+    guest_user_2.roles = []
+    guest_user_2.is_anonymous = False
+    guest_user_2.is_guest_user = True
+
     with patch.dict("superset.semantic_layers.models.registry", {"fixture": provider}):
+        # 1. With CACHE_QUERY_BY_USER enabled, users receive isolated cache keys
         with patch("superset.is_feature_enabled", return_value=True):
             g.user = user_a
             keys_a = view.get_extra_cache_keys({})
@@ -703,6 +721,27 @@ def test_semantic_view_cache_query_by_user(app_context: None) -> None:
             assert cache_key_a != cache_key_b
             assert any(k[0] == "semantic-user" for k in keys_a if isinstance(k, tuple))
             assert any(k[0] == "semantic-user" for k in keys_b if isinstance(k, tuple))
+
+            # Guest users do not partition cache keys, allowing shared guest caching
+            g.user = guest_user_1
+            keys_g1 = view.get_extra_cache_keys({})
+            g.user = guest_user_2
+            keys_g2 = view.get_extra_cache_keys({})
+            assert keys_g1 == keys_g2
+            assert not any(
+                k[0] == "semantic-user" for k in keys_g1 if isinstance(k, tuple)
+            )
+
+        # 2. When flag is disabled, cache keys remain unpartitioned and identical
+        with patch("superset.is_feature_enabled", return_value=False):
+            g.user = user_a
+            keys_off_a = view.get_extra_cache_keys({})
+            g.user = user_b
+            keys_off_b = view.get_extra_cache_keys({})
+            assert keys_off_a == keys_off_b
+            assert not any(
+                k[0] == "semantic-user" for k in keys_off_a if isinstance(k, tuple)
+            )
 
 
 def test_semantic_view_perm() -> None:

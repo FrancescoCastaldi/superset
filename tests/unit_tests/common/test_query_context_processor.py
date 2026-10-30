@@ -219,7 +219,11 @@ def test_get_data_json_preserves_browser_numeric_contract(
     processor, mock_query_context
 ) -> None:
     """Producer output keeps big integers exact and classifies long doubles safely."""
-    finite_longdouble = np.longdouble("1e400")
+    finite_longdouble = (
+        np.longdouble("1e300")
+        if np.isinf(np.longdouble("1e400"))
+        else np.longdouble("1e400")
+    )
     frame = pd.DataFrame(
         {
             "big_integer": pd.Series([2**53 + 1, 2**53 + 1], dtype=object),
@@ -3103,7 +3107,7 @@ def test_data_generation_separates_late_legacy_writer_and_task_keys(
 def test_get_viz_annotation_data_inherits_time_range_and_grain_override(
     app_context: Any,
 ) -> None:
-    """Annotation layer inherits time range and grain from host query object (#45796)."""
+    """Annotation layer inherits time range and grain from host query object (#45796)."""  # noqa: E501
     source_query: MagicMock = MagicMock(
         columns=[{"column_name": "ds", "timeGrain": "P1D"}],
         filters=[{"col": "ds", "op": "TEMPORAL_RANGE", "val": "2020 : 2021"}],
@@ -3119,12 +3123,20 @@ def test_get_viz_annotation_data_inherits_time_range_and_grain_override(
     host_query = MagicMock(
         time_range="2024-01-01 : 2025-01-01",
         extras={"time_grain_sqla": "P1M"},
-        filters=[{"col": "ds", "op": "TEMPORAL_RANGE", "val": "2024-01-01 : 2025-01-01"}],
+        filters=[
+            {"col": "ds", "op": "TEMPORAL_RANGE", "val": "2024-01-01 : 2025-01-01"}
+        ],
     )
 
     with (
-        patch("superset.common.query_context_processor.ChartDAO.find_by_id", return_value=chart),
-        patch("superset.commands.chart.data.get_data_command.ChartDataCommand", return_value=command),
+        patch(
+            "superset.common.query_context_processor.ChartDAO.find_by_id",
+            return_value=chart,
+        ),
+        patch(
+            "superset.commands.chart.data.get_data_command.ChartDataCommand",
+            return_value=command,
+        ),
     ):
         result = QueryContextProcessor.get_viz_annotation_data(
             {

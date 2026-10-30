@@ -1255,7 +1255,7 @@ class BaseTemplateProcessor:
 
         try:
             return template.render(context)
-        except RecursionError as ex:
+        except (RecursionError, MemoryError) as ex:
             raise SupersetTemplateException(
                 "Infinite recursion detected in template"
             ) from ex
@@ -1659,7 +1659,12 @@ def metric_macro(
         )
 
     definition = metrics[metric_key]
-    template = env.from_string(definition)
-    definition = template.render(context)
+    try:
+        template = env.from_string(definition)
+        definition = template.render(context)
+    except (RecursionError, MemoryError) as ex:
+        raise SupersetTemplateException(
+            "Infinite recursion detected in template"
+        ) from ex
 
     return definition

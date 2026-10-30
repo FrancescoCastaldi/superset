@@ -4804,9 +4804,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                 return value
 
             try:
-                dttm = datetime.fromtimestamp(epoch_ms / 1000, tz=timezone.utc).replace(
-                    tzinfo=None
-                )
+                dttm = datetime(1970, 1, 1) + timedelta(milliseconds=epoch_ms)
             except (OverflowError, OSError, ValueError):
                 return value
 

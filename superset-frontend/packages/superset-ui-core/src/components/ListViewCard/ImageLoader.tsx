@@ -65,7 +65,7 @@ export function ImageLoader({
         } else {
           requestUrl = SupersetClient.getUrl({ endpoint: src });
         }
-      } catch (e) {
+      } catch {
         requestUrl = src;
       }
 

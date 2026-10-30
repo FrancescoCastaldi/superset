@@ -644,7 +644,7 @@ def markdown(raw: str, markup_wrap: bool | None = False) -> str:
     # nh3 preserves supported link attributes and enforces a safe rel value.
     safe = nh3.clean(safe, tags=safe_markdown_tags, attributes=safe_markdown_attrs)
     if markup_wrap:
-        safe = Markup(safe)
+        safe = Markup(safe)  # noqa: S704
     return safe
 
 
@@ -1513,11 +1513,12 @@ def convert_legacy_filters_into_adhoc(  # pylint: disable=invalid-name
                 adhoc_filters.append(form_data_to_adhoc(form_data, clause))
 
         if "filters" in form_data:
-            adhoc_filters.extend(
-                simple_filter_to_adhoc(fltr, "where")
-                for fltr in form_data["filters"]
-                if fltr is not None
-            )
+            for fltr in form_data["filters"]:
+                if fltr is not None:
+                    if isinstance(fltr, dict) and fltr.get("expressionType"):
+                        adhoc_filters.append(fltr)
+                    else:
+                        adhoc_filters.append(simple_filter_to_adhoc(fltr, "where"))
 
     for key in ("filters", "having", "where"):
         if key in form_data:

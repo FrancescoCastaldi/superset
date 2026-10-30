@@ -2335,6 +2335,61 @@ def test_metric_macro_embedded_user_skips_base_filter(mocker: MockerFixture) -> 
             ["dttm"],
             ["dttm"],
         ),
+        (
+            "Filter is extracted from adhoc_filters when custom SQL filter precedes it (#45269)",  # noqa: E501
+            ["dttm"],
+            {"target_type": "DATE", "remove_filter": True},
+            "trino://mydb",
+            [
+                {
+                    "adhoc_filters": [
+                        {
+                            "clause": "WHERE",
+                            "expressionType": "SQL",
+                            "sqlExpression": "status = 'active'",
+                        },
+                        {
+                            "clause": "WHERE",
+                            "expressionType": "SIMPLE",
+                            "subject": "dttm",
+                            "operator": "TEMPORAL_RANGE",
+                            "comparator": "Last month",
+                        },
+                    ],
+                }
+            ],
+            TimeFilter(
+                from_expr="DATE '2024-08-03'",
+                to_expr="DATE '2024-09-03'",
+                time_range="Last month",
+            ),
+            ["dttm"],
+            ["dttm"],
+        ),
+        (
+            "Default filter returned when only a custom SQL filter is present (#45269)",
+            ["dttm"],
+            {"default": "Last month", "target_type": "DATE", "remove_filter": True},
+            "trino://mydb",
+            [
+                {
+                    "adhoc_filters": [
+                        {
+                            "clause": "WHERE",
+                            "expressionType": "SQL",
+                            "sqlExpression": "status = 'active'",
+                        },
+                    ],
+                }
+            ],
+            TimeFilter(
+                from_expr="DATE '2024-08-03'",
+                to_expr="DATE '2024-09-03'",
+                time_range="Last month",
+            ),
+            [],
+            [],
+        ),
     ],
 )
 def test_get_time_filter(

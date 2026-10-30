@@ -207,7 +207,7 @@ def test_redis_sentinel_cache_backend_forwards_db_and_username(
 
     master_kwargs = sentinel_mock.return_value.master_for.call_args.kwargs
     assert master_kwargs["db"] == 7
-    assert master_kwargs["username"] == "coordination_user" 
+    assert master_kwargs["username"] == "coordination_user"
 
 
 def test_redis_cache_backend_stream_helpers(mocker: MockerFixture) -> None:

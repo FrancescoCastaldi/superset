@@ -493,6 +493,7 @@ def test_get_chart_csv_data_closes_response(
 
 def test_format_decimal_custom_separator():
     from decimal import Decimal
+
     from superset.utils.csv import format_decimal
 
     assert format_decimal(Decimal("123.456")) == "123.456"

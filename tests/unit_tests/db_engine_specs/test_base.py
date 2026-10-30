@@ -2059,9 +2059,10 @@ def test_expand_nested_columns_default_returns_input() -> None:
 
 
 def test_get_column_spec_tinyint():
+    from sqlalchemy import types
+
     from superset.db_engine_specs.base import BaseEngineSpec
     from superset.utils.core import GenericDataType
-    from sqlalchemy import types
 
     col_spec = BaseEngineSpec.get_column_spec("TINYINT")
     assert col_spec is not None

@@ -125,9 +125,7 @@ _DATEUTIL_FIXED_TIMEZONE_TYPES = frozenset(
 _DATEUTIL_NAMED_TIMEZONE_TYPES = frozenset(
     {dateutil_tz.tzfile, dateutil_zoneinfo.tzfile}
 )
-_DATEUTIL_TTINFO_TYPE = type(
-    object.__getattribute__(dateutil_tz.gettz("UTC"), "__dict__")["_ttinfo_std"]
-)
+_DATEUTIL_TTINFO_TYPE = getattr(dateutil_tz.tz, "_ttinfo", type(None))
 _DATEUTIL_LOCAL_TIMEZONE_TYPE = type(dateutil_tz.tzlocal())
 _PYTZ_FIXED_TIMEZONE_TYPES = frozenset({type(pytz.FixedOffset(1))})
 _MAX_DATEUTIL_TRANSITIONS = 4_096
