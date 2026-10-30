@@ -23,7 +23,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, cast, NamedTuple, TYPE_CHECKING
 
-from flask import current_app, g
+from flask import current_app
 from flask_babel import gettext as _
 from jinja2.exceptions import TemplateError
 from pandas import DataFrame
@@ -728,15 +728,9 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
         # or if the CACHE_QUERY_BY_USER flag is on or per_user_caching is enabled on
         #  the database
         try:
-            database = getattr(self.datasource, "database", None)
-            if database is not None:
-                add_impersonation_cache_key_if_needed(database, cache_dict)
-            elif feature_flag_manager.is_feature_enabled("CACHE_QUERY_BY_USER"):
-                user = getattr(g, "user", None)
-                if user and getattr(user, "username", None):
-                    cache_dict["impersonation_key"] = user.username
-        except (AttributeError, RuntimeError):
-            # datasource or database do not exist or outside request context
+            add_impersonation_cache_key_if_needed(self.datasource.database, cache_dict)  # type: ignore
+        except AttributeError:
+            # datasource or database do not exist
             pass
 
         cache_key = hash_from_dict(
