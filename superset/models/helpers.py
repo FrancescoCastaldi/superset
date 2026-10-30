@@ -2482,7 +2482,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
         db_engine_spec = self.db_engine_spec
         # add quotes to tables
         if db_engine_spec.get_allows_alias_in_select(self.database):
-            label = db_engine_spec.make_label_compatible(label_expected)
+            label = db_engine_spec.make_label_compatible(label_expected, database=self.database)
             sqla_col = sqla_col.label(label)
         sqla_col.key = label_expected
         return sqla_col
@@ -7641,7 +7641,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     # in this case the column name, not the alias, needs to be
                     # conditionally mutated, as it refers to the column alias in
                     # the inner query
-                    col_name = db_engine_spec.make_label_compatible(gby_name + "__")
+                    col_name = db_engine_spec.make_label_compatible(gby_name + "__", database=self.database)
                     subq_col = (
                         subq_alias.c[col_name]
                         if col_name in subq_alias.c
@@ -7662,7 +7662,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     def _create_join_condition(col_name: str, expr: Any) -> Any:
                         # Get the corresponding column from the subquery
                         subq_col_name = db_engine_spec.make_label_compatible(
-                            col_name + "__"
+                            col_name + "__", database=self.database
                         )
                         # Reference the column from the already-created aliased subquery
                         subq_col = subq_alias.c[subq_col_name]

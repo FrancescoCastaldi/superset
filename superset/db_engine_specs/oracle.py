@@ -74,6 +74,29 @@ class OracleEngineSpec(BaseEngineSpec):
     supports_multivalues_insert = True
 
     @classmethod
+    def get_max_column_name_length(
+        cls, database: Database | None = None
+    ) -> int | None:
+        """
+        Return the maximum column/identifier length supported by Oracle.
+
+        Oracle 12.2 and later supports up to 128 bytes. Older releases (e.g. 11g, 12.1)
+        only support 30 bytes.
+        """
+        if database is not None:
+            version = database.get_extra().get("version")
+            if version is not None:
+                parts = [int(p) for p in re.findall(r"\d+", str(version))]
+                if parts:
+                    if parts[0] < 12 or (parts[0] == 12 and len(parts) > 1 and parts[1] < 2):
+                        return 30
+            major_version = cls.get_server_major_version(database)
+            if major_version is not None and major_version < 12:
+                return 30
+
+        return cls.max_column_name_length
+
+    @classmethod
     def get_limit_method(cls, database: Database) -> LimitMethod:
         """
         Use `ROWNUM` for row limits on Oracle releases before 12c.

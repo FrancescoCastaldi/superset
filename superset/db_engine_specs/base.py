@@ -2693,7 +2693,19 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return g and hasattr(g, "user") and isinstance(ex, cls.oauth2_exception)
 
     @classmethod
-    def make_label_compatible(cls, label: str) -> str | quoted_name:
+    def get_max_column_name_length(
+        cls, database: Database | None = None
+    ) -> int | None:
+        """
+        Return the maximum column/identifier length supported by the database engine.
+        Defaults to cls.max_column_name_length.
+        """
+        return cls.max_column_name_length
+
+    @classmethod
+    def make_label_compatible(
+        cls, label: str, database: Database | None = None
+    ) -> str | quoted_name:
         """
         Conditionally mutate and/or quote a sqlalchemy expression label. If
         force_column_alias_quotes is set to True, return the label as a
@@ -2703,14 +2715,16 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         generate a truncated label by calling truncate_label().
 
         :param label: expected expression label/alias
+        :param database: optional database instance for version-specific length bounds
         :return: conditionally mutated label supported by the db engine
         """
         label_mutated = cls._mutate_label(label)
+        max_col_length = cls.get_max_column_name_length(database)
         if (
-            cls.max_column_name_length
-            and len(label_mutated) > cls.max_column_name_length
+            max_col_length
+            and len(label_mutated) > max_col_length
         ):
-            label_mutated = cls._truncate_label(label)
+            label_mutated = cls._truncate_label(label, max_length=max_col_length)
         if cls.force_column_alias_quotes:
             label_mutated = quoted_name(label_mutated, True)
         return label_mutated
@@ -2760,7 +2774,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return label
 
     @classmethod
-    def _truncate_label(cls, label: str) -> str:
+    def _truncate_label(cls, label: str, max_length: int | None = None) -> str:
         """
         In the case that a label exceeds the max length supported by the engine,
         this method is used to construct a deterministic and unique label based on
@@ -2769,12 +2783,14 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         of the engine.
 
         :param label: Expected expression label
+        :param max_length: Optional explicit maximum column length
         :return: Truncated label
         """
         label = hash_from_str(label)
         # truncate hash if it exceeds max length
-        if cls.max_column_name_length and len(label) > cls.max_column_name_length:
-            label = label[: cls.max_column_name_length]
+        max_col_length = max_length if max_length is not None else cls.max_column_name_length
+        if max_col_length and len(label) > max_col_length:
+            label = label[: max_col_length]
         return label
 
     @classmethod

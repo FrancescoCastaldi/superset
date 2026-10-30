@@ -394,3 +394,38 @@ def test_oracle_week_time_grain():
 
     assert OracleEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "TRUNC(CAST({col} as DATE), 'IW')"
     assert ImpalaEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "DATE_TRUNC('week', {col})"
+
+
+@pytest.mark.parametrize(
+    "version, expected_max_length",
+    [
+        ("10g", 30),
+        ("11g", 30),
+        ("11.2.0.4", 30),
+        ("12.1", 30),
+        ("12.2", 128),
+        ("19c", 128),
+        ("23ai", 128),
+        (None, 128),
+    ],
+)
+def test_oracle_max_column_name_length_version_check(
+    version: Any, expected_max_length: int
+) -> None:
+    from superset.db_engine_specs.oracle import OracleEngineSpec
+
+    database = mock_oracle_database(version=version) if version is not None else None
+    assert OracleEngineSpec.get_max_column_name_length(database) == expected_max_length
+
+
+def test_oracle_make_label_compatible_truncates_for_legacy_version() -> None:
+    from superset.db_engine_specs.oracle import OracleEngineSpec
+
+    database_11g = mock_oracle_database(version="11.2")
+    long_label = "a" * 50
+    label = OracleEngineSpec.make_label_compatible(long_label, database=database_11g)
+    assert len(label) == 30
+
+    database_19c = mock_oracle_database(version="19c")
+    label_19c = OracleEngineSpec.make_label_compatible(long_label, database=database_19c)
+    assert len(label_19c) == 50
