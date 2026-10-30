@@ -86,16 +86,20 @@ def escape_value(value: str) -> str:
     return value
 
 
-def format_decimal(value: Any) -> Any:
+def format_decimal(value: Any, decimal_separator: str = ".") -> Any:
     """Return finite decimals as exact fixed-point text; preserve other values."""
-    return (
-        format(value, "f")
-        if isinstance(value, Decimal) and value.is_finite()
-        else value
-    )
+    if isinstance(value, Decimal) and value.is_finite():
+        formatted = format(value, "f")
+        if decimal_separator and decimal_separator != ".":
+            return formatted.replace(".", decimal_separator)
+        return formatted
+    return value
 
 
 def df_to_escaped_csv(df: pd.DataFrame, **kwargs: Any) -> Any:
+    # Default to LF line terminators across platforms unless explicitly overridden
+    kwargs.setdefault("lineterminator", "\n")
+
     def escape_values(v: Any) -> Union[str, Any]:
         return escape_value(v) if isinstance(v, str) else v
 

@@ -489,3 +489,14 @@ def test_get_chart_csv_data_closes_response(
             == b"csv"
         )
     response.close.assert_called_once()
+
+
+def test_format_decimal_custom_separator():
+    from decimal import Decimal
+    from superset.utils.csv import format_decimal
+
+    assert format_decimal(Decimal("123.456")) == "123.456"
+    assert format_decimal(Decimal("123.456"), decimal_separator=",") == "123,456"
+    assert format_decimal(Decimal("-0.005"), decimal_separator=",") == "-0,005"
+    assert format_decimal("not_a_decimal", decimal_separator=",") == "not_a_decimal"
+    assert format_decimal(12.34, decimal_separator=",") == 12.34

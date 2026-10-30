@@ -1677,7 +1677,15 @@ ALLOWED_EXTENSIONS = {*EXCEL_EXTENSIONS, *CSV_EXTENSIONS, *COLUMNAR_EXTENSIONS}
 
 # CSV Options: key/value pairs that will be passed as argument to DataFrame.to_csv
 # method.
-# note: index option should not be overridden
+# note: index option should not be overridden.
+# For localized European / German Excel compatibility (where comma is the decimal
+# separator and semicolon is the field delimiter), configure:
+# CSV_EXPORT = {
+#     "encoding": "utf-8-sig",
+#     "sep": ";",
+#     "decimal": ",",
+#     "float_format": "%.10g",
+# }
 CSV_EXPORT = {"encoding": "utf-8-sig"}
 
 # CSV Streaming: row threshold for using streaming CSV exports
