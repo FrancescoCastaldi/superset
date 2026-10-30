@@ -22,6 +22,7 @@ import { getInstanceByDom } from 'echarts/core';
 import { isSafari } from 'src/utils/common';
 import { forceLoadAllCharts } from './downloadUtils';
 import downloadAsImageOptimized, {
+  filterCssVariables,
   waitForStableScrollHeight,
 } from './downloadAsImage';
 
@@ -1515,4 +1516,12 @@ test('forwards both bound toast callbacks to forceLoadAllCharts', async () => {
     addInfoToast,
   );
   document.body.removeChild(el);
+});
+
+test('filterCssVariables filters out custom CSS properties starting with -- (#45885)', () => {
+  expect(filterCssVariables('--ant-color-primary')).toBe(false);
+  expect(filterCssVariables('--custom-var')).toBe(false);
+  expect(filterCssVariables('color')).toBe(true);
+  expect(filterCssVariables('background-color')).toBe(true);
+  expect(filterCssVariables('font-size')).toBe(true);
 });
