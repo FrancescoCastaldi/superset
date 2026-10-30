@@ -181,3 +181,16 @@ def test_escape_column_name():
         "level1\\,value2" + FLAT_COLUMN_SEPARATOR + "level2\\, value2",
         "level1\\,value3" + FLAT_COLUMN_SEPARATOR + "level2\\, value3",
     ]
+
+
+def test_flat_should_reset_multilevel_row_index():
+    index = pd.MultiIndex.from_tuples(
+        [("group_a", "sub_1"), ("group_a", "sub_2"), ("group_b", "sub_1")],
+        names=["group", "subgroup"],
+    )
+    df = pd.DataFrame(index=index, data={"val": [10, 20, 30]})
+    res = pp.flatten(df)
+    assert list(res.columns.values) == ["group", "subgroup", "val"]
+    assert res["group"].tolist() == ["group_a", "group_a", "group_b"]
+    assert res["subgroup"].tolist() == ["sub_1", "sub_2", "sub_1"]
+    assert res["val"].tolist() == [10, 20, 30]
