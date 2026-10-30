@@ -3518,7 +3518,7 @@ def test_calculated_column_series_limit_join_on_is_parenthesized(
     )
     sql = _compile(database, sqla_query)
 
-    assert f"({CALC_EXPR}) = is_ca_or_ny__" in sql, (
+    assert f"({CALC_EXPR}) = series_limit.is_ca_or_ny__" in sql, (
         f"Series-limit JOIN ON should compare the parenthesized expression. SQL: {sql}"
     )
     # The bare (mis-parsing) form must be absent.

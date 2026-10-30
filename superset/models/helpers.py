@@ -7634,18 +7634,24 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                 subq = subq.order_by(direction(ob))
                 subq = subq.limit(series_limit)
 
+                subq_alias = subq.alias(SERIES_LIMIT_SUBQ_ALIAS)
+
                 on_clause = []
                 for gby_name, gby_obj in groupby_series_columns.items():
                     # in this case the column name, not the alias, needs to be
                     # conditionally mutated, as it refers to the column alias in
                     # the inner query
                     col_name = db_engine_spec.make_label_compatible(gby_name + "__")
-                    on_clause.append(gby_obj == sa.column(col_name))
+                    subq_col = (
+                        subq_alias.c[col_name]
+                        if col_name in subq_alias.c
+                        else sa.column(col_name)
+                    )
+                    on_clause.append(gby_obj == subq_col)
 
                 # Use LEFT JOIN when grouping others, INNER JOIN otherwise
                 if group_others_when_limit_reached:
-                    # Create the alias once and reuse it
-                    subq_alias = subq.alias(SERIES_LIMIT_SUBQ_ALIAS)
+                    # Reuse the created subq_alias
                     tbl = tbl.join(
                         subq_alias,
                         and_(*on_clause),
@@ -7690,7 +7696,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     )
                 else:
                     tbl = tbl.join(
-                        subq.alias(SERIES_LIMIT_SUBQ_ALIAS), and_(*on_clause)
+                        subq_alias, and_(*on_clause)
                     )
             else:
                 if series_limit_metric:
