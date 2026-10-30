@@ -258,7 +258,7 @@ MCP_API_KEY_ENABLED: bool | None = None
 # place to create or rotate a key. Defaults to the FAB user profile page;
 # deployments that manage keys elsewhere can override this to point at their
 # own key-management UI without forking the auth code.
-MCP_API_KEY_CREATE_URL = "/profile/"
+MCP_API_KEY_CREATE_URL = "/user_info/"
 
 # Accept Superset embedded guest tokens on the MCP transport (opt-in, default
 # False). Requires the EMBEDDED_SUPERSET flag and the shared core
