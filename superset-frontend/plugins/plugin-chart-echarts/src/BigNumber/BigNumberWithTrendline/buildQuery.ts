@@ -45,6 +45,10 @@ export default function buildQuery(formData: QueryFormData) {
         ...baseQueryObject,
         columns: [...timeColumn],
         ...(timeColumn.length ? {} : { is_timeseries: true }),
+        orderby:
+          timeColumn.length && !baseQueryObject.orderby?.length
+            ? [[timeColumn[0], true]]
+            : baseQueryObject.orderby,
         post_processing: [
           pivotOperator(formData, baseQueryObject),
           resampleOperator(formData, baseQueryObject),

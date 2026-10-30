@@ -158,6 +158,16 @@ export default function transformProps(
   let bigNumberFallback = null;
   let sortedData: [number | null, number | null][] = [];
 
+  const getTimeValue = (val: unknown): number => {
+    if (typeof val === 'number') return val;
+    if (val instanceof Date) return val.getTime();
+    if (typeof val === 'string') {
+      const parsed = Date.parse(val);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+
   if (data.length > 0) {
     sortedData = (data as BigNumberDatum[])
       .map(
@@ -168,7 +178,11 @@ export default function transformProps(
           ],
       )
       // sort in time descending order
-      .sort((a, b) => (a[0] !== null && b[0] !== null ? b[0] - a[0] : 0));
+      .sort((a, b) => {
+        if (a[0] === null || a[0] === undefined) return 1;
+        if (b[0] === null || b[0] === undefined) return -1;
+        return getTimeValue(b[0]) - getTimeValue(a[0]);
+      });
   }
   if (sortedData.length > 0) {
     timestamp = sortedData[0][0];

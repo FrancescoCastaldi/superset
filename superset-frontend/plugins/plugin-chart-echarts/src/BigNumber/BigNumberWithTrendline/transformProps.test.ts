@@ -125,6 +125,38 @@ describe('BigNumberWithTrendline transformProps', () => {
   const baseHooks = { onContextMenu };
   const baseRawFormData = { dummy: 'raw' };
 
+  test('should correctly sort string timestamps and pick the latest timestamp for Last Value (#45888)', () => {
+    const chartProps = {
+      width: 500,
+      height: 400,
+      queriesData: [
+        {
+          data: [
+            { __timestamp: '2026-10-30 09:00:00', value: 100 },
+            { __timestamp: '2026-10-30 11:00:00', value: 300 },
+            { __timestamp: '2026-10-30 10:00:00', value: 200 },
+          ] as unknown as BigNumberDatum[],
+          colnames: ['__timestamp', 'value'],
+          coltypes: ['TEMPORAL', 'NUMERIC'],
+        },
+      ],
+      formData: {
+        ...baseFormData,
+        aggregation: 'LAST_VALUE',
+      },
+      rawFormData: baseRawFormData,
+      hooks: baseHooks,
+      datasource: baseDatasource,
+      theme: { colors: { grayscale: { light5: '#eee' } } },
+    };
+
+    const result = transformProps(
+      chartProps as unknown as BigNumberWithTrendlineChartProps,
+    );
+    expect(result.bigNumber).toBe(300);
+    expect(result.timestamp).toBe('2026-10-30 11:00:00');
+  });
+
   test('should return null bigNumber when no data is provided', () => {
     const chartProps = {
       width: 400,
