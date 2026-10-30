@@ -385,3 +385,12 @@ def test_register_engine_events_ignores_other_dialects() -> None:
     dialect = sqlite.dialect()
     OracleEngineSpec.register_engine_events(mock.Mock(dialect=dialect))
     assert not hasattr(dialect, "_supports_offset_fetch")
+
+
+def test_oracle_week_time_grain():
+    from superset.constants import TimeGrain
+    from superset.db_engine_specs.oracle import OracleEngineSpec
+    from superset.db_engine_specs.impala import ImpalaEngineSpec
+
+    assert OracleEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "TRUNC(CAST({col} as DATE), 'IW')"
+    assert ImpalaEngineSpec._time_grain_expressions[TimeGrain.WEEK] == "DATE_TRUNC('week', {col})"
