@@ -665,6 +665,46 @@ def test_semantic_view_get_extra_cache_keys(
     provider.assert_not_called()
 
 
+def test_semantic_view_cache_query_by_user(app_context: None) -> None:
+    """When CACHE_QUERY_BY_USER is enabled, different users get different cache keys (#45877)."""
+    from flask import g
+    from superset.common.query_object import QueryObject
+
+    provider = MagicMock()
+    provider.result_cache_version = None
+    view = SemanticView(semantic_layer=SemanticLayer(type="fixture"))
+    query = QueryObject(columns=["category"])
+
+    user_a = MagicMock()
+    user_a.id = 1
+    user_a.username = "alice"
+    user_a.roles = []
+    user_a.is_anonymous = False
+    user_a.is_guest_user = False
+
+    user_b = MagicMock()
+    user_b.id = 2
+    user_b.username = "bob"
+    user_b.roles = []
+    user_b.is_anonymous = False
+    user_b.is_guest_user = False
+
+    with patch.dict("superset.semantic_layers.models.registry", {"fixture": provider}):
+        with patch("superset.is_feature_enabled", return_value=True):
+            g.user = user_a
+            keys_a = view.get_extra_cache_keys({})
+            cache_key_a = query.cache_key(extra_cache_keys=keys_a)
+
+            g.user = user_b
+            keys_b = view.get_extra_cache_keys({})
+            cache_key_b = query.cache_key(extra_cache_keys=keys_b)
+
+            assert keys_a != keys_b
+            assert cache_key_a != cache_key_b
+            assert any(k[0] == "semantic-user" for k in keys_a if isinstance(k, tuple))
+            assert any(k[0] == "semantic-user" for k in keys_b if isinstance(k, tuple))
+
+
 def test_semantic_view_perm() -> None:
     """Test SemanticView perm stores the view-level permission string."""
     view = SemanticView()

@@ -728,7 +728,13 @@ class QueryObject:  # pylint: disable=too-many-instance-attributes
         # or if the CACHE_QUERY_BY_USER flag is on or per_user_caching is enabled on
         #  the database
         try:
-            add_impersonation_cache_key_if_needed(self.datasource.database, cache_dict)  # type: ignore
+            database = getattr(self.datasource, "database", None)
+            if database is not None:
+                add_impersonation_cache_key_if_needed(database, cache_dict)
+            elif feature_flag_manager.is_feature_enabled("CACHE_QUERY_BY_USER"):
+                user = getattr(g, "user", None)
+                if user and getattr(user, "username", None):
+                    cache_dict["impersonation_key"] = user.username
         except AttributeError:
             # datasource or database do not exist
             pass
