@@ -2056,3 +2056,14 @@ def test_expand_nested_columns_default_returns_input() -> None:
     ]
 
     assert BaseEngineSpec.expand_nested_columns(object(), columns) is columns
+
+
+def test_get_column_spec_tinyint():
+    from superset.db_engine_specs.base import BaseEngineSpec
+    from superset.utils.core import GenericDataType
+    from sqlalchemy import types
+
+    col_spec = BaseEngineSpec.get_column_spec("TINYINT")
+    assert col_spec is not None
+    assert isinstance(col_spec.sqla_type, types.SmallInteger)
+    assert col_spec.generic_type == GenericDataType.NUMERIC
