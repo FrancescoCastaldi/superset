@@ -186,6 +186,30 @@ def test_redis_sentinel_cache_backend_from_config_reads_timeout_keys(
     assert master_kwargs["socket_connect_timeout"] == 4
 
 
+def test_redis_sentinel_cache_backend_forwards_db_and_username(
+    mocker: MockerFixture,
+) -> None:
+    """RedisSentinelCacheBackend must forward db and username to master_for (#45491)."""
+    from superset.coordination.cache_backend import RedisSentinelCacheBackend
+
+    sentinel_mock = mocker.patch("superset.coordination.cache_backend.Sentinel")
+    master_mock = mock.Mock()
+    sentinel_mock.return_value.master_for.return_value = master_mock
+
+    RedisSentinelCacheBackend.from_config(
+        {
+            "CACHE_REDIS_SENTINELS": [("localhost", 26379)],
+            "CACHE_REDIS_SENTINEL_MASTER": "mymaster",
+            "CACHE_REDIS_DB": 7,
+            "CACHE_REDIS_USER": "coordination_user",
+        }
+    )
+
+    master_kwargs = sentinel_mock.return_value.master_for.call_args.kwargs
+    assert master_kwargs["db"] == 7
+    assert master_kwargs["username"] == "coordination_user" 
+
+
 def test_redis_cache_backend_stream_helpers(mocker: MockerFixture) -> None:
     """xread / stream_last_id / expire delegate to the redis client correctly."""
     from superset.coordination.cache_backend import RedisCacheBackend

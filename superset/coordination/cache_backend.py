@@ -335,6 +335,7 @@ class RedisSentinelCacheBackend(RedisCommandsMixin, RedisSentinelCache):
         sentinels: list[tuple[str, int]],
         master: str,
         password: str | None = None,
+        username: str | None = None,
         sentinel_password: str | None = None,
         db: int = 0,
         default_timeout: int = 300,
@@ -382,9 +383,11 @@ class RedisSentinelCacheBackend(RedisCommandsMixin, RedisSentinelCache):
             },
         )
 
-        # Prepare SSL-related arguments for master_for method
+        # Prepare arguments for master_for method
         master_kwargs: dict[str, Any] = {
             "password": password,
+            "username": username,
+            "db": db,
             "ssl": ssl,
             "ssl_certfile": ssl_certfile if ssl else None,
             "ssl_keyfile": ssl_keyfile if ssl else None,
@@ -441,4 +444,9 @@ class RedisSentinelCacheBackend(RedisCommandsMixin, RedisSentinelCache):
                 "CACHE_REDIS_SOCKET_CONNECT_TIMEOUT", None
             ),
         }
+
+        # Handle username separately as it's optional for Redis authentication.
+        if configured_username := config.get("CACHE_REDIS_USER"):
+            kwargs["username"] = configured_username
+
         return cls(**kwargs)
