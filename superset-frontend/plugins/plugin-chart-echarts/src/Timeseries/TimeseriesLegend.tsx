@@ -19,10 +19,11 @@
 import { memo } from 'react';
 import { styled } from '@apache-superset/core/theme';
 import { t } from '@apache-superset/core/translation';
+import { LegendOrientation } from '@superset-ui/core';
 import type { TimeseriesCustomLegend } from './types';
 
-const LegendViewport = styled.div<{ maxHeight: number }>`
-  ${({ maxHeight, theme }) => `
+const LegendViewport = styled.div<{ maxHeight: number; isVertical?: boolean }>`
+  ${({ maxHeight, theme, isVertical }) => `
     box-sizing: border-box;
     color: ${theme.colorText};
     font-size: ${theme.fontSizeSM}px;
@@ -30,7 +31,8 @@ const LegendViewport = styled.div<{ maxHeight: number }>`
     overflow-x: hidden;
     overflow-y: auto;
     padding: ${theme.sizeUnit}px ${theme.sizeUnit * 2}px;
-    width: 100%;
+    width: ${isVertical ? 'auto' : '100%'};
+    max-width: ${isVertical ? '250px' : '100%'};
   `}
 `;
 
@@ -64,12 +66,13 @@ const SelectorButton = styled.button`
   `}
 `;
 
-const ItemList = styled.ul`
-  ${({ theme }) => `
+const ItemList = styled.ul<{ isVertical?: boolean }>`
+  ${({ theme, isVertical }) => `
     align-items: flex-start;
     display: flex;
-    flex-wrap: wrap;
-    gap: ${theme.sizeUnit * 2}px;
+    flex-direction: ${isVertical ? 'column' : 'row'};
+    flex-wrap: ${isVertical ? 'nowrap' : 'wrap'};
+    gap: ${theme.sizeUnit * (isVertical ? 1 : 2)}px;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -138,14 +141,23 @@ function TimeseriesLegend({
   onHover,
   onInverse,
   onToggle,
+  orientation,
   showSelectors,
 }: TimeseriesLegendProps) {
   if (items.length === 0 || maxHeight <= 0) {
     return null;
   }
 
+  const isVertical =
+    orientation === LegendOrientation.Left ||
+    orientation === LegendOrientation.Right;
+
   return (
-    <LegendViewport data-test="timeseries-custom-legend" maxHeight={maxHeight}>
+    <LegendViewport
+      data-test="timeseries-custom-legend"
+      maxHeight={maxHeight}
+      isVertical={isVertical}
+    >
       {showSelectors && (
         <SelectorRow>
           <SelectorButton type="button" onClick={onAll}>
@@ -156,7 +168,7 @@ function TimeseriesLegend({
           </SelectorButton>
         </SelectorRow>
       )}
-      <ItemList>
+      <ItemList isVertical={isVertical}>
         {items.map((item, index) =>
           item.name === '' || item.name === '\n' ? (
             <RowBreak

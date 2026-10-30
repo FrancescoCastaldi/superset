@@ -72,8 +72,15 @@ const MIN_TIMESERIES_PLOT_HEIGHT = 80;
 export const getTimeseriesLegendMaxHeight = (
   chartBodyHeight: number,
   grid: TimeseriesCustomLegend['grid'],
-) =>
-  Math.min(
+  orientation?: LegendOrientation,
+) => {
+  if (
+    orientation === LegendOrientation.Left ||
+    orientation === LegendOrientation.Right
+  ) {
+    return Math.max(chartBodyHeight, 0);
+  }
+  return Math.min(
     MAX_CUSTOM_LEGEND_HEIGHT,
     Math.floor(Math.max(chartBodyHeight, 0) * MAX_CUSTOM_LEGEND_HEIGHT_RATIO),
     Math.max(
@@ -86,6 +93,7 @@ export const getTimeseriesLegendMaxHeight = (
       0,
     ),
   );
+};
 const getTimestampFromTimeAxisValue = (value: string | number) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : undefined;
@@ -835,7 +843,11 @@ export default function EchartsTimeseries({
 
   const chartBodyHeight = Math.max(height - extraControlHeight, 0);
   const customLegendMaxHeight = customLegend
-    ? getTimeseriesLegendMaxHeight(chartBodyHeight, customLegend.grid)
+    ? getTimeseriesLegendMaxHeight(
+        chartBodyHeight,
+        customLegend.grid,
+        customLegend.orientation,
+      )
     : 0;
   const shouldRenderCustomLegend =
     customLegend !== undefined &&

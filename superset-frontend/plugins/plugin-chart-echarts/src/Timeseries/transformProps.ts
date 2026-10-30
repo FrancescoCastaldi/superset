@@ -1364,9 +1364,7 @@ export default function transformProps(
   ).map(String);
   const usesCustomLegend =
     isLegendVisible &&
-    legendType === LegendType.Plain &&
-    (legendOrientation === LegendOrientation.Top ||
-      legendOrientation === LegendOrientation.Bottom);
+    legendType === LegendType.Plain;
   const nativeLegendVisible = isLegendVisible && !usesCustomLegend;
   // Use the exact final ordering ECharts receives. Forecast components share
   // a legend name, and ECharts takes the first matching series as its visual.
