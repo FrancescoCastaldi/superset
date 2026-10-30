@@ -3100,6 +3100,49 @@ def test_data_generation_separates_late_legacy_writer_and_task_keys(
     provider.assert_not_called()
 
 
+def test_get_viz_annotation_data_inherits_time_range_and_grain_override(
+    app_context: Any,
+) -> None:
+    """Annotation layer inherits time range and grain from host query object (#45796)."""
+    source_query: MagicMock = MagicMock(
+        columns=[{"column_name": "ds", "timeGrain": "P1D"}],
+        filters=[{"col": "ds", "op": "TEMPORAL_RANGE", "val": "2020 : 2021"}],
+        extras={"time_grain_sqla": "P1D"},
+        annotation_layers=[],
+    )
+    query_context: MagicMock = MagicMock(queries=[source_query])
+    chart: MagicMock = MagicMock(id=42)
+    chart.get_query_context.return_value = query_context
+    command: MagicMock = MagicMock()
+    command.run.return_value = {"queries": [{"data": [{"ds": "2024-01-01", "val": 1}]}]}
+
+    host_query = MagicMock(
+        time_range="2024-01-01 : 2025-01-01",
+        extras={"time_grain_sqla": "P1M"},
+        filters=[{"col": "ds", "op": "TEMPORAL_RANGE", "val": "2024-01-01 : 2025-01-01"}],
+    )
+
+    with (
+        patch("superset.common.query_context_processor.ChartDAO.find_by_id", return_value=chart),
+        patch("superset.commands.chart.data.get_data_command.ChartDataCommand", return_value=command),
+    ):
+        result = QueryContextProcessor.get_viz_annotation_data(
+            {
+                "value": 42,
+                "name": "Source",
+                "overrides": {"time_range": None, "time_grain_sqla": None},
+            },
+            force=False,
+            query_obj=host_query,
+        )
+
+    assert result == {"records": [{"ds": "2024-01-01", "val": 1}]}
+    assert source_query.time_range == "2024-01-01 : 2025-01-01"
+    assert source_query.filters[0]["val"] == "2024-01-01 : 2025-01-01"
+    assert source_query.extras["time_grain_sqla"] == "P1M"
+    assert source_query.columns[0]["timeGrain"] == "P1M"
+
+
 def test_get_viz_annotation_data_ignores_source_chart_annotations(
     app_context: Any,
 ) -> None:

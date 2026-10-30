@@ -74,6 +74,7 @@ from superset.utils import csv, excel, json
 from superset.utils.cache import generate_cache_key, set_and_log_cache
 from superset.utils.core import (
     ANNOTATION_SOURCE_TYPES_WITH_CHART_REFERENCE,
+    FilterOperator,
     DatasourceType,
     DTTM_ALIAS,
     error_msg_from_exception,
@@ -934,7 +935,7 @@ class QueryContextProcessor:
         ]:
             name = annotation_layer["name"]
             annotation_data[name] = self.get_viz_annotation_data(
-                annotation_layer, self._query_context.force
+                annotation_layer, self._query_context.force, query_obj=query_obj
             )
         return annotation_data
 
@@ -987,7 +988,9 @@ class QueryContextProcessor:
 
     @staticmethod
     def get_viz_annotation_data(  # noqa: C901
-        annotation_layer: dict[str, Any], force: bool
+        annotation_layer: dict[str, Any],
+        force: bool,
+        query_obj: QueryObject | None = None,
     ) -> dict[str, Any]:
         # pylint: disable=import-outside-toplevel
         from superset.commands.chart.data.get_data_command import ChartDataCommand
@@ -1023,16 +1026,55 @@ class QueryContextProcessor:
                 query_object.annotation_layers = []
 
             if overrides := annotation_layer.get("overrides"):
-                if time_grain_sqla := overrides.get("time_grain_sqla"):
+                time_grain = None
+                if "time_grain_sqla" in overrides or "granularity" in overrides:
+                    time_grain = overrides.get("time_grain_sqla") or overrides.get("granularity")
+                    if time_grain is None and query_obj:
+                        time_grain = query_obj.extras.get("time_grain_sqla") or query_obj.granularity
+                if time_grain:
                     for query_object in query_context.queries:
-                        query_object.extras["time_grain_sqla"] = time_grain_sqla
+                        query_object.extras["time_grain_sqla"] = time_grain
+                        for col in query_object.columns:
+                            if isinstance(col, dict) and "timeGrain" in col:
+                                col["timeGrain"] = time_grain
 
-                if time_range := overrides.get("time_range"):
+                time_range = None
+                if "time_range" in overrides:
+                    time_range = overrides.get("time_range")
+                    if time_range is None and query_obj:
+                        time_range = query_obj.time_range
+                        if not time_range:
+                            for flt in query_obj.filters:
+                                if flt.get("op") in ("TEMPORAL_RANGE", FilterOperator.TEMPORAL_RANGE):
+                                    time_range = flt.get("val")
+                                    break
+                if time_range:
                     from_dttm, to_dttm = get_since_until_from_time_range(time_range)
 
                     for query_object in query_context.queries:
                         query_object.from_dttm = from_dttm
                         query_object.to_dttm = to_dttm
+                        query_object.time_range = time_range
+
+                        has_temporal_filter = False
+                        for flt in query_object.filters:
+                            if flt.get("op") in ("TEMPORAL_RANGE", FilterOperator.TEMPORAL_RANGE):
+                                flt["val"] = time_range
+                                has_temporal_filter = True
+                        if not has_temporal_filter:
+                            temp_col = query_object.granularity
+                            if not temp_col and query_object.columns:
+                                first_col = query_object.columns[0]
+                                if isinstance(first_col, str):
+                                    temp_col = first_col
+                                elif isinstance(first_col, dict):
+                                    temp_col = first_col.get("column_name") or first_col.get("label")
+                            if temp_col and isinstance(temp_col, str):
+                                query_object.filters.append({
+                                    "col": temp_col,
+                                    "op": FilterOperator.TEMPORAL_RANGE.value,
+                                    "val": time_range,
+                                })
 
             query_context.force = force
             command = ChartDataCommand(query_context)
